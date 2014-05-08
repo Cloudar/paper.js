@@ -76,6 +76,7 @@ var paper = new function(undefined) {
 /*#*/ include('item/Raster.js');
 /*#*/ include('item/PlacedSymbol.js');
 /*#*/ include('item/HitResult.js');
+/*#*/ include('item/DomSceneObject.js');
 
 /*#*/ include('path/Segment.js');
 /*#*/ include('path/SegmentPoint.js');
