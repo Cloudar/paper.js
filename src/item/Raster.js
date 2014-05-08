@@ -290,7 +290,7 @@ var Raster = Item.extend(/** @lends Raster# */{
 	 * });
 	 */
 	getSource: function() {
-		return this._image && this._image.src || this.toDataURL();
+		return this._sourceUrl || (this._image && this._image.src) || this.toDataURL();
 	},
 
 	setSource: function(src) {
@@ -339,7 +339,12 @@ var Raster = Item.extend(/** @lends Raster# */{
 			// actually loaded and we give the code time to install event
 			setTimeout(loaded, 0);
 		} else if (/^https?:\/\//.test(src)) {
-			// Load it from remote location:
+            // Rasters loaded from remote location should not be exported as
+            // data:url and this is why we can set source url before the image
+            // is loaded
+            this._sourceUrl = src;
+
+            // Load it from remote location:
 			require('request').get({
 				url: src,
 				encoding: null // So the response data is a Buffer
