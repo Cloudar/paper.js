@@ -17,20 +17,10 @@
  *
  * @extends Base
  */
-var DomSceneObject = Base.extend(Callback, /** @lends DomSceneObject# */{
+var DomSceneObject = Item.extend(/** @lends DomSceneObject */{
     statics: {
-        extend: function extend(src) {
-            if (src._serializeFields)
-                src._serializeFields = Base.merge(
-                    this.prototype._serializeFields, src._serializeFields);
-            var res = extend.base.apply(this, arguments),
-                proto = res.prototype,
-                name = proto._class;
-            if (name)
-                proto._type = Base.hyphenate(name);
-            return res;
-        },
         allDomSceneObjects: [],
+
         updateCoords: function(zoomFactor, objects) {
             objects = objects || DomSceneObject.allDomSceneObjects;
             for (var i = 0; i < objects.length; i++) {
@@ -67,10 +57,10 @@ var DomSceneObject = Base.extend(Callback, /** @lends DomSceneObject# */{
             this._setProject(project);
         }
 
-        if (!this._project.view.inited) {
+        if (!DomSceneObject.initialized) {
             this._project.view.on('zoom', DomSceneObject.updateCoords);
             this._project.view.on('scroll', DomSceneObject.updateCoords);
-            this._project.view.inited = true;
+            DomSceneObject.initialized = true;
         }
 
         this.x = x || 0;
@@ -104,7 +94,8 @@ var DomSceneObject = Base.extend(Callback, /** @lends DomSceneObject# */{
         this._project.view._element.parentNode.removeChild(this.node);
         if (DomSceneObject.allDomSceneObjects.length === 0) {
             this._project.view.detach('zoom', DomSceneObject.updateCoords);
-            this._project.view.detach('fire', DomSceneObject.updateCoords);
+            this._project.view.detach('scroll', DomSceneObject.updateCoords);
+            DomSceneObject.initialized = false;
         }
     },
     canvasToDom: function(x, y) {
@@ -142,7 +133,6 @@ var DomSceneObject = Base.extend(Callback, /** @lends DomSceneObject# */{
     },
 
     setName: function(name, unique) {
-
         if (this._name)
             this._removeFromNamed();
         if (name && this._parent) {

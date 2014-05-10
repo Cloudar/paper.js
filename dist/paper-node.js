@@ -9,7 +9,7 @@
  *
  * All rights reserved.
  *
- * Date: Thu May 8 13:02:53 2014 +0300
+ * Date: Thu May 8 18:10:02 2014 +0300
  *
  ***
  *
@@ -4849,20 +4849,10 @@ var HitResult = Base.extend({
 	}
 });
 
-var DomSceneObject = Base.extend(Callback, {
+var DomSceneObject = Item.extend({
     statics: {
-        extend: function extend(src) {
-            if (src._serializeFields)
-                src._serializeFields = Base.merge(
-                    this.prototype._serializeFields, src._serializeFields);
-            var res = extend.base.apply(this, arguments),
-                proto = res.prototype,
-                name = proto._class;
-            if (name)
-                proto._type = Base.hyphenate(name);
-            return res;
-        },
         allDomSceneObjects: [],
+
         updateCoords: function(zoomFactor, objects) {
             objects = objects || DomSceneObject.allDomSceneObjects;
             for (var i = 0; i < objects.length; i++) {
@@ -4899,10 +4889,10 @@ var DomSceneObject = Base.extend(Callback, {
             this._setProject(project);
         }
 
-        if (!this._project.view.inited) {
+        if (!DomSceneObject.initialized) {
             this._project.view.on('zoom', DomSceneObject.updateCoords);
             this._project.view.on('scroll', DomSceneObject.updateCoords);
-            this._project.view.inited = true;
+            DomSceneObject.initialized = true;
         }
 
         this.x = x || 0;
@@ -4936,7 +4926,8 @@ var DomSceneObject = Base.extend(Callback, {
         this._project.view._element.parentNode.removeChild(this.node);
         if (DomSceneObject.allDomSceneObjects.length === 0) {
             this._project.view.detach('zoom', DomSceneObject.updateCoords);
-            this._project.view.detach('fire', DomSceneObject.updateCoords);
+            this._project.view.detach('scroll', DomSceneObject.updateCoords);
+            DomSceneObject.initialized = false;
         }
     },
     canvasToDom: function(x, y) {
@@ -4974,7 +4965,6 @@ var DomSceneObject = Base.extend(Callback, {
     },
 
     setName: function(name, unique) {
-
         if (this._name)
             this._removeFromNamed();
         if (name && this._parent) {
@@ -10345,7 +10335,9 @@ var View = Base.extend(Callback, {
 			}
 		},
 
-		onResize: {}
+		onResize: {},
+        onZoom: {},
+        onScroll: {}
 	},
 
 	_animate: false,
@@ -10488,6 +10480,7 @@ var View = Base.extend(Callback, {
 		this._transform(new Matrix().scale(zoom / this._zoom,
 			this.getCenter()));
 		this._zoom = zoom;
+        this.fire('zoom', zoom);
 	},
 
 	isVisible: function() {
@@ -10496,6 +10489,7 @@ var View = Base.extend(Callback, {
 
 	scrollBy: function() {
 		this._transform(new Matrix().translate(Point.read(arguments).negate()));
+        this.fire('scroll', Point.read(arguments).negate());
 	},
 
 	play: function() {
