@@ -9,7 +9,7 @@
  *
  * All rights reserved.
  *
- * Date: Sat May 10 09:32:42 2014 +0300
+ * Date: Tue May 13 18:46:14 2014 +0300
  *
  ***
  *
@@ -4566,7 +4566,6 @@ var Raster = Item.extend({
 				paper = view._scope;
 				that.setImage(image);
 				that.fire('load');
-				view.update();
 			}
 		}
 

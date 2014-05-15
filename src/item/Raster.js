@@ -303,7 +303,9 @@ var Raster = Item.extend(/** @lends Raster# */{
 				paper = view._scope;
 				that.setImage(image);
 				that.fire('load');
+/*#*/ if (__options.environment == 'browser') {
 				view.update();
+/*#*/ } // __options.environment == 'browser'
 			}
 		}
 
