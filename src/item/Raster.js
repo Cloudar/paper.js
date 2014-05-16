@@ -298,11 +298,13 @@ var Raster = Item.extend(/** @lends Raster# */{
 			image;
 
 		function loaded() {
+            that.setImage(image);
+            that.fire('load');
+
 			var view = that.getView();
+
 			if (view) {
 				paper = view._scope;
-				that.setImage(image);
-				that.fire('load');
 /*#*/ if (__options.environment == 'browser') {
 				view.update();
 /*#*/ } // __options.environment == 'browser'
