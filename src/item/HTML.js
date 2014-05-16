@@ -11,18 +11,19 @@
  */
 
 /**
- * @name DomSceneObject
+ * @name HTML
  *
- * @class The Raster item represents an image in a Paper.js project.
+ * @class The HTML item represents a DOM object bound to Paper.js canvas
+ * which moves accordingly to zoom and scroll events.
  *
  * @extends Base
  */
-var DomSceneObject = Item.extend(/** @lends DomSceneObject */{
+var HTML = Item.extend(/** @lends HTML */{
     statics: {
-        allDomSceneObjects: [],
+        objects: [],
 
         updateCoords: function(zoomFactor, objects) {
-            objects = objects || DomSceneObject.allDomSceneObjects;
+            objects = objects || HTML.objects;
             for (var i = 0; i < objects.length; i++) {
                 var item = objects[i],
                     node = item.node,
@@ -45,7 +46,7 @@ var DomSceneObject = Item.extend(/** @lends DomSceneObject */{
         }
     },
 
-    _class: 'DomSceneObject',
+    _class: 'HTML',
     _serializeFields: {
     },
 
@@ -57,10 +58,10 @@ var DomSceneObject = Item.extend(/** @lends DomSceneObject */{
             this._setProject(project);
         }
 
-        if (!DomSceneObject.initialized) {
-            this._project.view.on('zoom', DomSceneObject.updateCoords);
-            this._project.view.on('scroll', DomSceneObject.updateCoords);
-            DomSceneObject.initialized = true;
+        if (!this._project.view.initialized) {
+            this._project.view.on('zoom', HTML.updateCoords);
+            this._project.view.on('scroll', HTML.updateCoords);
+            this._project.view.initialized = true;
         }
 
         this.x = x || 0;
@@ -71,33 +72,37 @@ var DomSceneObject = Item.extend(/** @lends DomSceneObject */{
         var coord = this.canvasToDom(x, y);
         this.node.style.left = coord.x + 'px';
         this.node.style.top = coord.y + 'px';
-        this.node.className = "sticker-dom-obj";
-        DomSceneObject.allDomSceneObjects.push(this);
+        this.node.className = "paper-html-item";
+        HTML.objects.push(this);
         this._project.view._element.parentNode.style.position = 'relative';
         this._project.view._element.parentNode.style.padding = '0';
         this._project.view._element.parentNode.style.margin = '0';
         this._project.view._element.parentNode.appendChild(this.node);
         this.node.boundsCenter = center;
     },
+
     removeChild: function(node){
         this.node.removeChild(node);
     },
+
     appendChild: function(node){
         this.node.appendChild(node);
     },
+
     remove: function(){
-        for (var i = 0; i < DomSceneObject.allDomSceneObjects.length; i++){
-            if (DomSceneObject.allDomSceneObjects[i] === this){
-                DomSceneObject.allDomSceneObjects.splice(i, i + 1);
+        for (var i = 0; i < HTML.objects.length; i++){
+            if (HTML.objects[i] === this){
+                HTML.objects.splice(i, i + 1);
             }
         }
         this._project.view._element.parentNode.removeChild(this.node);
-        if (DomSceneObject.allDomSceneObjects.length === 0) {
-            this._project.view.detach('zoom', DomSceneObject.updateCoords);
-            this._project.view.detach('scroll', DomSceneObject.updateCoords);
-            DomSceneObject.initialized = false;
+        if (HTML.objects.length === 0) {
+            this._project.view.detach('zoom', HTML.updateCoords);
+            this._project.view.detach('scroll', HTML.updateCoords);
+            this._project.view.initialized = false;
         }
     },
+
     canvasToDom: function(x, y) {
         var matrix = this._project.view._matrix,
             newX = (matrix._tx + x * matrix._a),
@@ -105,12 +110,15 @@ var DomSceneObject = Item.extend(/** @lends DomSceneObject */{
 
         return {x: newX, y: newY};
     },
+
     data: {},
+
     set: function(props) {
         if (props)
             this._set(props);
         return this;
     },
+
     _setProject: function(project) {
         if (this._project != project) {
             this._project = project;
@@ -121,9 +129,11 @@ var DomSceneObject = Item.extend(/** @lends DomSceneObject */{
             }
         }
     },
+
     getId: function() {
         return this._id;
     },
+
     getType: function() {
         return this._type;
     },
