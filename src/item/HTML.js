@@ -24,9 +24,20 @@ var HTML = Item.extend(/** @lends HTML */{
 
         updateCoords: function(zoomFactor, objects) {
             objects = objects || HTML.objects;
-            for (var i = 0; i < objects.length; i++) {
-                var item = objects[i],
-                    node = item.node,
+
+            var i = 0;
+
+            while (i < objects.length) {
+                var item = objects[i];
+
+                // check if the project have been removed
+                // if it was, remove the item also
+                if (!item._project.view) {
+                    item.remove();
+                    continue;
+                }
+
+                var node = item.node,
                     _y = item.y,
                     _x = item.x,
                     _shiftX = 0,
@@ -42,6 +53,8 @@ var HTML = Item.extend(/** @lends HTML */{
                 var newCoords = item.canvasToDom(_x, _y);
                 item.node.style.left = newCoords.x - _shiftX + 'px';
                 item.node.style.top = newCoords.y - _shiftY + 'px';
+
+                i++;
             }
         }
     },
@@ -95,11 +108,13 @@ var HTML = Item.extend(/** @lends HTML */{
                 HTML.objects.splice(i, i + 1);
             }
         }
-        this._project.view._element.parentNode.removeChild(this.node);
-        if (HTML.objects.length === 0) {
-            this._project.view.detach('zoom', HTML.updateCoords);
-            this._project.view.detach('scroll', HTML.updateCoords);
-            this._project.view.initialized = false;
+        if (this._project.view) {
+            this._project.view._element.parentNode.removeChild(this.node);
+            if (HTML.objects.length === 0) {
+                this._project.view.detach('zoom', HTML.updateCoords);
+                this._project.view.detach('scroll', HTML.updateCoords);
+                this._project.view.initialized = false;
+            }
         }
     },
 
