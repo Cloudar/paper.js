@@ -137,7 +137,7 @@ var Path = PathItem.extend(/** @lends Path# */{
 
 	_changed: function _changed(flags) {
 		_changed.base.call(this, flags);
-		if (flags & /*#=*/ ChangeFlag.GEOMETRY) {
+		if (flags & /*#=*/ChangeFlag.GEOMETRY) {
 			// The _currentPath is already cleared in Item, but clear it on the
 			// parent too, for children of CompoundPaths, and Groups (ab)used as
 			// clipping paths.
@@ -148,7 +148,7 @@ var Path = PathItem.extend(/** @lends Path# */{
 			this._length = this._clockwise = undefined;
 			// Only notify all curves if we're not told that only one Segment
 			// has changed and took already care of notifications.
-			if (this._curves && !(flags & /*#=*/ ChangeFlag.SEGMENTS)) {
+			if (this._curves && !(flags & /*#=*/ChangeFlag.SEGMENTS)) {
 				for (var i = 0, l = this._curves.length; i < l; i++)
 					this._curves[i]._changed();
 			}
@@ -156,7 +156,7 @@ var Path = PathItem.extend(/** @lends Path# */{
 			// calculation.
 			// NOTE: This is only needed with __options.booleanOperations
 			this._monoCurves = undefined;
-		} else if (flags & /*#=*/ ChangeFlag.STROKE) {
+		} else if (flags & /*#=*/ChangeFlag.STROKE) {
 			// TODO: We could preserve the purely geometric bounds that are not
 			// affected by stroke: _bounds.bounds and _bounds.handleBounds
 			this._bounds = undefined;
@@ -289,48 +289,64 @@ var Path = PathItem.extend(/** @lends Path# */{
 			}
 			// Use SEGMENTS notification instead of GEOMETRY since curves are
 			// up-to-date and don't need notification.
-			this._changed(/*#=*/ Change.SEGMENTS);
+			this._changed(/*#=*/Change.SEGMENTS);
 		}
 	}
 }, /** @lends Path# */{
 	// Enforce bean creation for getPathData(), as it has hidden parameters.
 	beans: true,
 
-	getPathData: function(_precision) {
+	getPathData: function(_matrix, _precision) {
 		// NOTE: #setPathData() is defined in PathItem.
 		var segments = this._segments,
-			f = Formatter.instance,
+			length = segments.length,
+			f = new Formatter(_precision),
+			coords = new Array(6),
+			first = true,
+			curX, curY,
+			prevX, prevY,
+			inX, inY,
+			outX, outY,
 			parts = [];
 
-		// TODO: Add support for H/V and/or relative commands, where appropriate
-		// and resulting in shorter strings
-		function addCurve(seg1, seg2, skipLine) {
-			var point1 = seg1._point,
-				point2 = seg2._point,
-				handle1 = seg1._handleOut,
-				handle2 = seg2._handleIn;
-			if (handle1.isZero() && handle2.isZero()) {
-				if (!skipLine) {
-					// L = absolute lineto: moving to a point with drawing
-					parts.push('L' + f.point(point2, _precision));
-				}
+		function addSegment(segment, skipLine) {
+			segment._transformCoordinates(_matrix, coords, false);
+			curX = coords[0];
+			curY = coords[1];
+			if (first) {
+				parts.push('M' + f.pair(curX, curY));
+				first = false;
 			} else {
-				// c = relative curveto: handle1, handle2 + end - start,
-				// end - start
-				var end = point2.subtract(point1);
-				parts.push('c' + f.point(handle1, _precision)
-						+ ' ' + f.point(end.add(handle2), _precision)
-						+ ' ' + f.point(end, _precision));
+				inX = coords[2];
+				inY = coords[3];
+				// TODO: Add support for H/V and/or relative commands, where
+				// appropriate and resulting in shorter strings.
+				if (inX === curX && inY === curY
+						&& outX === prevX && outY === prevY) {
+					// l = relative lineto:
+					if (!skipLine)
+						parts.push('l' + f.pair(curX - prevX, curY - prevY));
+				} else {
+					// c = relative curveto:
+					parts.push('c' + f.pair(outX - prevX, outY - prevY)
+							+ ' ' + f.pair(inX - prevX, inY - prevY)
+							+ ' ' + f.pair(curX - prevX, curY - prevY));
+				}
 			}
+			prevX = curX;
+			prevY = curY;
+			outX = coords[4];
+			outY = coords[5];
 		}
 
-		if (segments.length === 0)
+		if (length === 0)
 			return '';
-		parts.push('M' + f.point(segments[0]._point));
-		for (var i = 0, l = segments.length  - 1; i < l; i++)
-			addCurve(segments[i], segments[i + 1], false);
-		if (this._closed) {
-			addCurve(segments[segments.length - 1], segments[0], true);
+
+		for (var i = 0; i < length; i++)
+			addSegment(segments[i]);
+		// Close path by drawing first segment again
+		if (this._closed && length > 0) {
+			addSegment(segments[0], true);
 			parts.push('z');
 		}
 		return parts.join('');
@@ -422,7 +438,7 @@ var Path = PathItem.extend(/** @lends Path# */{
 		}
 		// Use SEGMENTS notification instead of GEOMETRY since curves are kept
 		// up-to-date by _adjustCurves() and don't need notification.
-		this._changed(/*#=*/ Change.SEGMENTS);
+		this._changed(/*#=*/Change.SEGMENTS);
 		return segs;
 	},
 
@@ -748,7 +764,7 @@ var Path = PathItem.extend(/** @lends Path# */{
 		}
 		// Use SEGMENTS notification instead of GEOMETRY since curves are kept
 		// up-to-date by _adjustCurves() and don't need notification.
-		this._changed(/*#=*/ Change.SEGMENTS);
+		this._changed(/*#=*/Change.SEGMENTS);
 		return removed;
 	},
 
@@ -865,7 +881,7 @@ var Path = PathItem.extend(/** @lends Path# */{
 	isFullySelected: function() {
 		var length = this._segments.length;
 		return this._selected && length > 0 && this._selectedSegmentState
-				=== length * /*#=*/ SelectionState.SEGMENT;
+				=== length * /*#=*/SelectionState.SEGMENT;
 	},
 
 	setFullySelected: function(selected) {
@@ -887,10 +903,10 @@ var Path = PathItem.extend(/** @lends Path# */{
 	_selectSegments: function(selected) {
 		var length = this._segments.length;
 		this._selectedSegmentState = selected
-				? length * /*#=*/ SelectionState.SEGMENT : 0;
+				? length * /*#=*/SelectionState.SEGMENT : 0;
 		for (var i = 0; i < length; i++)
 			this._segments[i]._selectionState = selected
-					? /*#=*/ SelectionState.SEGMENT : 0;
+					? /*#=*/SelectionState.SEGMENT : 0;
 	},
 
 	_updateSelection: function(segment, oldState, newState) {
@@ -1132,7 +1148,7 @@ var Path = PathItem.extend(/** @lends Path# */{
 			index = arg.index;
 			parameter = arg.parameter;
 		}
-		var tolerance = /*#=*/ Numerical.TOLERANCE;
+		var tolerance = /*#=*/Numerical.TOLERANCE;
 		if (parameter >= 1 - tolerance) {
 			// t == 1 is the same as t == 0 and index ++
 			index++;
@@ -1216,7 +1232,7 @@ var Path = PathItem.extend(/** @lends Path# */{
 		// Flip clockwise state if it's defined
 		if (this._clockwise !== undefined)
 			this._clockwise = !this._clockwise;
-		this._changed(/*#=*/ ChangeFlag.GEOMETRY);
+		this._changed(/*#=*/Change.GEOMETRY);
 	},
 
 	// DOCS: document Path#join(path) in more detail.
@@ -1618,7 +1634,7 @@ var Path = PathItem.extend(/** @lends Path# */{
 
 	/**
 	 * Returns the curve location of the specified offset on the path.
-	 * 
+	 *
 	 * @param {Number} offset the offset on the path, where {@code 0} is at
 	 * the beginning of the path and {@link Path#length} at the end.
 	 * @param {Boolean} [isParameter=false]
@@ -1954,15 +1970,15 @@ var Path = PathItem.extend(/** @lends Path# */{
 			var state = segment._selectionState,
 				pX = coords[0],
 				pY = coords[1];
-			if (state & /*#=*/ SelectionState.HANDLE_IN)
+			if (state & /*#=*/SelectionState.HANDLE_IN)
 				drawHandle(2);
-			if (state & /*#=*/ SelectionState.HANDLE_OUT)
+			if (state & /*#=*/SelectionState.HANDLE_OUT)
 				drawHandle(4);
 			// Draw a rectangle at segment.point:
 			ctx.fillRect(pX - half, pY - half, size, size);
 			// If the point is not selected, draw a white square that is 1 px
 			// smaller on all sides:
-			if (!(state & /*#=*/ SelectionState.POINT)) {
+			if (!(state & /*#=*/SelectionState.POINT)) {
 				var fillStyle = ctx.fillStyle;
 				ctx.fillStyle = '#ffffff';
 				ctx.fillRect(pX - half + 1, pY - half + 1, size - 2, size - 2);
@@ -1981,11 +1997,11 @@ var Path = PathItem.extend(/** @lends Path# */{
 			inX, inY,
 			outX, outY;
 
-		function drawSegment(i) {
-			var segment = segments[i];
-			// Optimise code when no matrix is provided by accessing semgent
+		function drawSegment(segment) {
+			// Optimise code when no matrix is provided by accessing segment
 			// points hand handles directly, since this is the default when
-			// drawing paths. Matrix is only used for drawing selections.
+			// drawing paths. Matrix is only used for drawing selections and
+			// when #strokeScaling is false.
 			if (matrix) {
 				segment._transformCoordinates(matrix, coords, false);
 				curX = coords[0];
@@ -2007,7 +2023,8 @@ var Path = PathItem.extend(/** @lends Path# */{
 					inX = curX + handle._x;
 					inY = curY + handle._y;
 				}
-				if (inX == curX && inY == curY && outX == prevX && outY == prevY) {
+				if (inX === curX && inY === curY
+						&& outX === prevX && outY === prevY) {
 					ctx.lineTo(curX, curY);
 				} else {
 					ctx.bezierCurveTo(outX, outY, inX, inY, curX, curY);
@@ -2026,20 +2043,17 @@ var Path = PathItem.extend(/** @lends Path# */{
 		}
 
 		for (var i = 0; i < length; i++)
-			drawSegment(i);
+			drawSegment(segments[i]);
 		// Close path by drawing first segment again
 		if (path._closed && length > 0)
-			drawSegment(0);
+			drawSegment(segments[0]);
 	}
 
 	return {
-		_draw: function(ctx, param) {
+		_draw: function(ctx, param, strokeMatrix) {
 			var dontStart = param.dontStart,
-				dontPaint = param.dontFinish || param.clip;
-			if (!dontStart)
-				ctx.beginPath();
-
-			var style = this.getStyle(),
+				dontPaint = param.dontFinish || param.clip,
+				style = this.getStyle(),
 				hasFill = style.hasFill(),
 				hasStroke = style.hasStroke(),
 				dashArray = style.getDashArray(),
@@ -2047,23 +2061,26 @@ var Path = PathItem.extend(/** @lends Path# */{
 				dashLength = !paper.support.nativeDash && hasStroke
 						&& dashArray && dashArray.length;
 
-			function getOffset(i) {
-				// Negative modulo is necessary since we're stepping back
-				// in the dash sequence first.
-				return dashArray[((i % dashLength) + dashLength) % dashLength];
-			}
+			if (!dontStart)
+				ctx.beginPath();
 
 			if (!dontStart && this._currentPath) {
 				ctx.currentPath = this._currentPath;
 			} else if (hasFill || hasStroke && !dashLength || dontPaint) {
 				// Prepare the canvas path if we have any situation that
 				// requires it to be defined.
-				drawSegments(ctx, this);
+				drawSegments(ctx, this, strokeMatrix);
 				if (this._closed)
 					ctx.closePath();
 				// CompoundPath collects its own _currentPath
 				if (!dontStart)
 					this._currentPath = ctx.currentPath;
+			}
+
+			function getOffset(i) {
+				// Negative modulo is necessary since we're stepping back
+				// in the dash sequence first.
+				return dashArray[((i % dashLength) + dashLength) % dashLength];
 			}
 
 			if (!dontPaint && (hasFill || hasStroke)) {
@@ -2086,7 +2103,7 @@ var Path = PathItem.extend(/** @lends Path# */{
 						// native dashes.
 						if (!dontStart)
 							ctx.beginPath();
-						var flattener = new PathFlattener(this),
+						var flattener = new PathFlattener(this, strokeMatrix),
 							length = flattener.length,
 							from = -style.getDashOffset(), to,
 							i = 0;
@@ -2366,7 +2383,7 @@ var Path = PathItem.extend(/** @lends Path# */{
 					x = pt.x,
 					y = pt.y,
 					abs = Math.abs,
-					EPSILON = /*#=*/ Numerical.EPSILON,
+					EPSILON = /*#=*/Numerical.EPSILON,
 					rx = abs(radius.width),
 					ry = abs(radius.height),
 					rxSq = rx * rx,

@@ -16,7 +16,7 @@
  * @private
  */
 var PathFlattener = Base.extend({
-	initialize: function(path) {
+	initialize: function(path, matrix) {
 		this.curves = []; // The curve values as returned by getValues()
 		this.parts = []; // The calculated, subdivided parts of the path
 		this.length = 0; // The total length of the path
@@ -35,7 +35,7 @@ var PathFlattener = Base.extend({
 			that = this;
 
 		function addCurve(segment1, segment2) {
-			var curve = Curve.getValues(segment1, segment2);
+			var curve = Curve.getValues(segment1, segment2, matrix);
 			that.curves.push(curve);
 			that._computeParts(curve, segment1._index, 0, 1);
 		}
@@ -65,7 +65,7 @@ var PathFlattener = Base.extend({
 			var x = curve[6] - curve[0],
 				y = curve[7] - curve[1],
 				dist = Math.sqrt(x * x + y * y);
-			if (dist > /*#=*/ Numerical.TOLERANCE) {
+			if (dist > /*#=*/Numerical.TOLERANCE) {
 				this.length += dist;
 				this.parts.push({
 					offset: this.length,

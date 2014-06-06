@@ -225,12 +225,15 @@ var CompoundPath = PathItem.extend(/** @lends CompoundPath# */{
 	// Enforce bean creation for getPathData(), as it has hidden parameters.
 	beans: true,
 
-	getPathData: function(_precision) {
+	getPathData: function(_matrix, _precision) {
 		// NOTE: #setPathData() is defined in PathItem.
 		var children = this._children,
 			paths = [];
-		for (var i = 0, l = children.length; i < l; i++)
-			paths.push(children[i].getPathData(_precision));
+		for (var i = 0, l = children.length; i < l; i++) {
+			var child = children[i],
+				mx = child._matrix;
+			paths.push(child.getPathData(_matrix ? _matrix.clone().concatenate(mx) : mx, _precision));
+		}
 		return paths.join(' ');
 	}
 }, /** @lends CompoundPath# */{
@@ -244,7 +247,7 @@ var CompoundPath = PathItem.extend(/** @lends CompoundPath# */{
 				: new Base(options, { fill: false });
 	},
 
-	_draw: function(ctx, param) {
+	_draw: function(ctx, param, strokeMatrix) {
 		var children = this._children;
 		// Return early if the compound path doesn't have any children:
 		if (children.length === 0)
@@ -256,7 +259,7 @@ var CompoundPath = PathItem.extend(/** @lends CompoundPath# */{
 			param = param.extend({ dontStart: true, dontFinish: true });
 			ctx.beginPath();
 			for (var i = 0, l = children.length; i < l; i++)
-				children[i].draw(ctx, param);
+				children[i].draw(ctx, param, strokeMatrix);
 			this._currentPath = ctx.currentPath;
 		}
 
@@ -272,13 +275,14 @@ var CompoundPath = PathItem.extend(/** @lends CompoundPath# */{
 		}
 	},
 
-	_drawSelected: function(ctx, matrix) {
+	_drawSelected: function(ctx, matrix, selectedItems) {
 		var children = this._children;
 		for (var i = 0, l = children.length; i < l; i++) {
 			var child = children[i],
 				mx = child._matrix;
-			child._drawSelected(ctx, mx.isIdentity() ? matrix
-					: matrix.clone().concatenate(child._matrix));
+			if (!selectedItems[child._id])
+				child._drawSelected(ctx, mx.isIdentity() ? matrix
+						: matrix.clone().concatenate(mx));
 		}
 	}
 }, new function() { // Injection scope for PostScript-like drawing functions

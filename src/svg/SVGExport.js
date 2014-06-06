@@ -38,10 +38,10 @@ new function() {
 			document.createElementNS('http://www.w3.org/2000/svg', tag), attrs);
 	}
 
-	function getTransform(item, coordinates, center) {
-		var matrix = item._matrix,
-			trans = matrix.getTranslation(),
-			attrs = {};
+	function getTransform(matrix, coordinates, center) {
+		// Use new Base() so we can use Base#set() on it.
+		var attrs = new Base(),
+			trans = matrix.getTranslation();
 		if (coordinates) {
 			// If the item suppports x- and y- coordinates, we're taking out the
 			// translation part of the matrix and move it to x, y attributes, to
@@ -79,7 +79,7 @@ new function() {
 	}
 
 	function exportGroup(item, options) {
-		var attrs = getTransform(item),
+		var attrs = getTransform(item._matrix),
 			children = item._children;
 		var node = createElement('g', attrs);
 		for (var i = 0, l = children.length; i < l; i++) {
@@ -102,7 +102,7 @@ new function() {
 	}
 
 	function exportRaster(item) {
-		var attrs = getTransform(item, true),
+		var attrs = getTransform(item._matrix, true),
 			size = item.getSize();
 		// Take into account that rasters are centered:
 		attrs.x -= size.width / 2;
@@ -121,7 +121,7 @@ new function() {
 		}
 		var segments = item._segments,
 			type,
-			attrs;
+			attrs = getTransform(item._matrix);
 		if (segments.length === 0)
 			return null;
 		if (item.isPolygon()) {
@@ -130,24 +130,21 @@ new function() {
 				var parts = [];
 				for(i = 0, l = segments.length; i < l; i++)
 					parts.push(formatter.point(segments[i]._point));
-				attrs = {
-					points: parts.join(' ')
-				};
+				attrs.points = parts.join(' ');
 			} else {
 				type = 'line';
 				var first = segments[0]._point,
 					last = segments[segments.length - 1]._point;
-				attrs = {
+				attrs.set({
 					x1: first.x,
 					y1: first.y,
 					x2: last.x,
 					y2: last.y
-				};
+				});
 			}
 		} else {
 			type = 'path';
-			var data = item.getPathData();
-			attrs = data && { d: data };
+			attrs.d = item.getPathData(null, options.precision);
 		}
 		return createElement(type, attrs);
 	}
@@ -155,7 +152,7 @@ new function() {
 	function exportShape(item) {
 		var type = item._type,
 			radius = item._radius,
-			attrs = getTransform(item, true, type !== 'rectangle');
+			attrs = getTransform(item._matrix, true, type !== 'rectangle');
 		if (type === 'rectangle') {
 			type = 'rect'; // SVG
 			var size = item._size,
@@ -179,16 +176,16 @@ new function() {
 		return createElement(type, attrs);
 	}
 
-	function exportCompoundPath(item) {
-		var attrs = getTransform(item, true);
-		var data = item.getPathData();
+	function exportCompoundPath(item, options) {
+		var attrs = getTransform(item._matrix);
+		var data = item.getPathData(null, options.precision);
 		if (data)
 			attrs.d = data;
 		return createElement('path', attrs);
 	}
 
 	function exportPlacedSymbol(item, options) {
-		var attrs = getTransform(item, true),
+		var attrs = getTransform(item._matrix, true),
 			symbol = item.getSymbol(),
 			symbolNode = getDefinition(symbol, 'symbol'),
 			definition = symbol.getDefinition(),
@@ -265,7 +262,7 @@ new function() {
 	}
 
 	function exportText(item) {
-		var node = createElement('text', getTransform(item, true));
+		var node = createElement('text', getTransform(item._matrix, true));
 		node.textContent = item._content;
 		return node;
 	}
@@ -294,7 +291,9 @@ new function() {
 			var get = entry.get,
 				type = entry.type,
 				value = item[get]();
-			if (!parent || !Base.equals(parent[get](), value)) {
+			if (entry.exportFilter
+					? entry.exportFilter(item, value)
+					: !parent || !Base.equals(parent[get](), value)) {
 				if (type === 'color' && value != null) {
 					// Support for css-style rgba() values is not in SVG 1.1, so
 					// separate the alpha value of colors with alpha into the
@@ -412,7 +411,8 @@ new function() {
 		exportSVG: function(options) {
 			options = setOptions(options);
 			var layers = this.layers,
-				size = this.getView().getSize(),
+				view = this.getView(),
+				size = view.getViewSize(),
 				node = createElement('svg', {
 					x: 0,
 					y: 0,
@@ -421,9 +421,16 @@ new function() {
 					version: '1.1',
 					xmlns: 'http://www.w3.org/2000/svg',
 					'xmlns:xlink': 'http://www.w3.org/1999/xlink'
-				});
+				}),
+				parent = node,
+				matrix = view._matrix;
+			// If the view has a transformation, wrap all layers in a group with
+			// that transformation applied to.
+			if (!matrix.isIdentity())
+				parent = node.appendChild(
+						createElement('g', getTransform(matrix)));
 			for (var i = 0, l = layers.length; i < l; i++)
-				node.appendChild(exportSVG(layers[i], options));
+				parent.appendChild(exportSVG(layers[i], options));
 			return exportDefinitions(node, options);
 		}
 	});

@@ -236,28 +236,28 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 		var symbol = this._parentSymbol,
 			cacheParent = this._parent || symbol,
 			project = this._project;
-		if (flags & /*#=*/ ChangeFlag.GEOMETRY) {
+		if (flags & /*#=*/ChangeFlag.GEOMETRY) {
 			// Clear cached bounds, position and decomposed matrix whenever
 			// geometry changes. Also clear _currentPath since it can be used
 			// both on compound-paths and clipping groups.
 			this._bounds = this._position = this._decomposed =
 					this._globalMatrix = this._currentPath = undefined;
 		}
-		if (cacheParent && (flags
-				& (/*#=*/ ChangeFlag.GEOMETRY | /*#=*/ ChangeFlag.STROKE))) {
+		if (cacheParent
+				&& (flags & /*#=*/(ChangeFlag.GEOMETRY | ChangeFlag.STROKE))) {
 			// Clear cached bounds of all items that this item contributes to.
 			// We call this on the parent, since the information is cached on
 			// the parent, see getBounds().
 			Item._clearBoundsCache(cacheParent);
 		}
-		if (flags & /*#=*/ ChangeFlag.CHILDREN) {
+		if (flags & /*#=*/ChangeFlag.CHILDREN) {
 			// Clear cached bounds of all items that this item contributes to.
 			// Here we don't call this on the parent, since adding / removing a
 			// child triggers this notification on the parent.
 			Item._clearBoundsCache(this);
 		}
 		if (project) {
-			if (flags & /*#=*/ ChangeFlag.APPEARANCE) {
+			if (flags & /*#=*/ChangeFlag.APPEARANCE) {
 				project._needsUpdate = true;
 			}
 			// Have project keep track of changed items so they can be iterated.
@@ -380,7 +380,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 			children[name] = this;
 		}
 		this._name = name || undefined;
-		this._changed(/*#=*/ ChangeFlag.ATTRIBUTE);
+		this._changed(/*#=*/ChangeFlag.ATTRIBUTE);
 	},
 
 	/**
@@ -462,7 +462,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 				this[name] = value;
 				// #locked does not change appearance, all others do:
 				this._changed(name === '_locked'
-						? /*#=*/ ChangeFlag.ATTRIBUTE : /*#=*/ Change.ATTRIBUTE);
+						? /*#=*/ChangeFlag.ATTRIBUTE : /*#=*/Change.ATTRIBUTE);
 			}
 		};
 }, {}), /** @lends Item# */{
@@ -632,7 +632,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 		if ((selected = !!selected) ^ this._selected) {
 			this._selected = selected;
 			this._project._updateSelection(this);
-			this._changed(/*#=*/ Change.ATTRIBUTE);
+			this._changed(/*#=*/Change.ATTRIBUTE);
 		}
 	},
 
@@ -681,10 +681,10 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 				this.setFillColor(null);
 				this.setStrokeColor(null);
 			}
-			this._changed(/*#=*/ Change.ATTRIBUTE);
+			this._changed(/*#=*/Change.ATTRIBUTE);
 			// Tell the parent the clipping mask has changed
 			if (this._parent)
-				this._parent._changed(/*#=*/ ChangeFlag.CLIPPING);
+				this._parent._changed(/*#=*/ChangeFlag.CLIPPING);
 		}
 	},
 
@@ -945,7 +945,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 		var _matrix = internalGetter ? null : this._matrix.orNullIfIdentity(),
 			cache = (!matrix || matrix.equals(_matrix)) && getter;
 		// Set up a boundsCache structure that keeps track of items that keep
-		// cached bounds that depend on this item. We store this in our parent,
+		// cached bounds that depend on this item. We store this in the parent,
 		// for multiple reasons:
 		// The parent receives CHILDREN change notifications for when its
 		// children are added or removed and can thus clear the cache, and we
@@ -1008,21 +1008,21 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 		_clearBoundsCache: function(item) {
 			// This is defined as a static method so Symbol can used it too.
 			// Clear the position as well, since it's depending on bounds.
-			if (item._boundsCache) {
-				for (var i = 0, list = item._boundsCache.list, l = list.length;
-						i < l; i++) {
-					var child = list[i];
-					if (child !== item) {
-						child._bounds = child._position = undefined;
-						// We need to recursively call _clearBoundsCache,
-						// because when the cache for this child's children is
-						// not valid anymore, that propagates up the DOM tree.
-						if (child._boundsCache)
-							Item._clearBoundsCache(child);
+			var cache = item._boundsCache;
+			if (cache) {
+				// Erase cache before looping, to prevent circular recursion.
+				item._bounds = item._position = item._boundsCache = undefined;
+				for (var i = 0, list = cache.list, l = list.length; i < l; i++) {
+					var other = list[i];
+					if (other !== item) {
+						other._bounds = other._position = undefined;
+						// We need to recursively call _clearBoundsCache, as
+						// when the cache for the other item's children is not
+						// valid anymore, that propagates up the DOM tree.
+						if (other._boundsCache)
+							Item._clearBoundsCache(other);
 					}
 				}
-				// Clear the item itself, as well as its bounds cache.
-				item._bounds = item._position = item._boundsCache = undefined;
 			}
 		}
 	}
@@ -1137,7 +1137,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 			// _changed() for us.
 			this.transform(null, true);
 		} else {
-			this._changed(/*#=*/ Change.GEOMETRY);
+			this._changed(/*#=*/Change.GEOMETRY);
 		}
 	},
 
@@ -1702,7 +1702,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 			tolerancePadding = options._tolerancePadding = new Size(
 						Path._getPenPadding(1, totalMatrix.inverted())
 					).multiply(
-						Math.max(options.tolerance, /*#=*/ Numerical.TOLERANCE)
+						Math.max(options.tolerance, /*#=*/Numerical.TOLERANCE)
 					);
 		// Transform point to local coordinates.
 		point = matrix._inverseTransform(point);
@@ -2060,9 +2060,9 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 				if (item._name)
 					item.setName(item._name);
 				if (notifySelf)
-					this._changed(/*#=*/ Change.INSERTION);
+					this._changed(/*#=*/Change.INSERTION);
 			}
-			this._changed(/*#=*/ Change.CHILDREN);
+			this._changed(/*#=*/Change.CHILDREN);
 		} else {
 			items = null;
 		}
@@ -2220,11 +2220,11 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 			if (notifySelf) {
 				var project = this._project;
 				if (project && project._changes)
-					this._changed(/*#=*/ Change.INSERTION);
+					this._changed(/*#=*/Change.INSERTION);
 			}
 			// Notify parent of changed children
 			if (notifyParent)
-				parent._changed(/*#=*/ Change.CHILDREN);
+				parent._changed(/*#=*/Change.CHILDREN);
 			this._parent = null;
 			return true;
 		}
@@ -2274,7 +2274,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 			removed[i]._remove(true, false);
 		}
 		if (removed.length > 0)
-			this._changed(/*#=*/ Change.CHILDREN);
+			this._changed(/*#=*/Change.CHILDREN);
 		return removed;
 	},
 
@@ -2290,7 +2290,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 			// Adjust indices
 			for (var i = 0, l = this._children.length; i < l; i++)
 				this._children[i]._index = i;
-			this._changed(/*#=*/ Change.CHILDREN);
+			this._changed(/*#=*/Change.CHILDREN);
 		}
 	},
 
@@ -2546,8 +2546,8 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 	 */
 
 	/**
-	 * The shape to be used at the end of open {@link Path} items, when they
-	 * have a stroke.
+	 * The shape to be used at the beginning and end of open {@link Path} items,
+	 * when they have a stroke.
 	 *
 	 * @name Item#strokeCap
 	 * @property
@@ -2579,7 +2579,8 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 	 */
 
 	/**
-	 * The shape to be used at the corners of paths when they have a stroke.
+	 * The shape to be used at the segments and corners of {@link Path} items
+	 * when they have a stroke.
 	 *
 	 * @name Item#strokeJoin
 	 * @property
@@ -2613,6 +2614,17 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 	 * @property
 	 * @default 0
 	 * @type Number
+	 */
+
+	/**
+	 * Specifies whether the stroke is to be drawn taking the current affine
+	 * transformation into account (the default behavior), or whether it should
+	 * appear as a non-scaling stroke.
+	 *
+	 * @name Style#strokeScaling
+	 * @property
+	 * @default true
+	 * @type Boolean
 	 */
 
 	/**
@@ -2926,7 +2938,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 			position = this._position;
 		// We always need to call _changed since we're caching bounds on all
 		// items, including Group.
-		this._changed(/*#=*/ Change.GEOMETRY);
+		this._changed(/*#=*/Change.GEOMETRY);
 		// Detect matrices that contain only translations and scaling
 		// and transform the cached _bounds and _position without having to
 		// fully recalculate each time.
@@ -3574,7 +3586,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 		}
 	},
 
-	draw: function(ctx, param) {
+	draw: function(ctx, param, parentStrokeMatrix) {
 		// Each time the project gets drawn, it's _updateVersion is increased.
 		// Keep the _updateVersion of drawn items in sync, so we have an easy
 		// way to know for which selected items we need to draw selection info.
@@ -3627,10 +3639,12 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 			// Determine if we can draw directly, or if we need to draw into a
 			// separate canvas and then composite onto the main canvas.
 			direct = normalBlend && opacity === 1
+					|| param.dontStart // e.g. CompoundPath
 					|| param.clip
 					// If native blending is possible, see if the item allows it
 					|| (nativeBlend || normalBlend && opacity < 1)
 						&& this._canComposite(),
+			pixelRatio = param.pixelRatio,
 			mainCtx, itemOffset, prevOffset;
 		if (!direct) {
 			// Apply the parent's global matrix to the calculation of correct
@@ -3647,29 +3661,51 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 			// Set ctx to the context of the temporary canvas, so we draw onto
 			// it, instead of the mainCtx.
 			mainCtx = ctx;
-			ctx = CanvasProvider.getContext(
-					bounds.getSize().ceil().add(new Size(1, 1)),
-					param.pixelRatio);
+			ctx = CanvasProvider.getContext(bounds.getSize().ceil().add(1)
+					.multiply(pixelRatio));
+			if (pixelRatio !== 1)
+				ctx.scale(pixelRatio, pixelRatio);
 		}
 		ctx.save();
+		// Get the transformation matrix for non-scaling strokes.
+		var strokeMatrix = parentStrokeMatrix
+				? parentStrokeMatrix.clone().concatenate(matrix)
+				: !this.getStrokeScaling() && getViewMatrix(globalMatrix),
+			// If we're drawing into a separate canvas and a clipItem is defined
+			// for the current rendering loop, we need to draw the clip item
+			// again.
+			clip = !direct && param.clipItem,
+			// If we're drawing with a strokeMatrix, the CTM is reset either way
+			// so we don't need to set it, except when we also have to draw a
+			// clipItem.
+			transform = !strokeMatrix || clip;
 		// If drawing directly, handle opacity and native blending now,
 		// otherwise we will do it later when the temporary canvas is composited.
 		if (direct) {
 			ctx.globalAlpha = opacity;
 			if (nativeBlend)
 				ctx.globalCompositeOperation = blendMode;
-		} else {
+		} else if (transform) {
 			// Translate the context so the topLeft of the item is at (0, 0)
 			// on the temporary canvas.
 			ctx.translate(-itemOffset.x, -itemOffset.y);
 		}
 		// Apply globalMatrix when drawing into temporary canvas.
-		(direct ? matrix : getViewMatrix(globalMatrix)).applyToContext(ctx);
-		// If we're drawing into a separate canvas and a clipItem is defined for
-		// the current rendering loop, we need to draw the clip item again.
-		if (!direct && param.clipItem)
+		if (transform)
+			(direct ? matrix : getViewMatrix(globalMatrix)).applyToContext(ctx);
+		if (clip)
 			param.clipItem.draw(ctx, param.extend({ clip: true }));
-		this._draw(ctx, param);
+		if (strokeMatrix) {
+			// Reset the transformation but take HiDPI pixel ratio into account.
+			ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+			// Also offset again when drawing non-directly.
+			// NOTE: Don't use itemOffset since offset might be from the parent,
+			// e.g. CompoundPath
+			var offset = param.offset;
+			if (offset)
+				ctx.translate(-offset.x, -offset.y);
+		}
+		this._draw(ctx, param, strokeMatrix);
 		ctx.restore();
 		matrices.pop();
 		if (param.clip && !param.dontFinish)
@@ -3681,7 +3717,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 			BlendMode.process(blendMode, ctx, mainCtx, opacity,
 					// Calculate the pixel offset of the temporary canvas to the
 					// main canvas. We also need to factor in the pixel-ratio.
-					itemOffset.subtract(prevOffset).multiply(param.pixelRatio));
+					itemOffset.subtract(prevOffset).multiply(pixelRatio));
 			// Return the temporary context, so it can be reused
 			CanvasProvider.release(ctx);
 			// Restore previous offset.
@@ -3715,7 +3751,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 		return updated;
 	},
 
-	_drawSelection: function(ctx, matrix, size, updateVersion) {
+	_drawSelection: function(ctx, matrix, size, selectedItems, updateVersion) {
 		if ((this._drawSelected || this._boundsSelected)
 				&& this._isUpdated(updateVersion)) {
 			// Allow definition of selected color on a per item and per
@@ -3726,7 +3762,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 			ctx.strokeStyle = ctx.fillStyle = color
 					? color.toCanvasStyle(ctx) : '#009dec';
 			if (this._drawSelected)
-				this._drawSelected(ctx, mx);
+				this._drawSelected(ctx, mx, selectedItems);
 			if (this._boundsSelected) {
 				var half = size / 2;
 					coords = mx._transformCorners(this.getInternalBounds());

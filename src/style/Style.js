@@ -77,6 +77,7 @@ var Style = Base.extend(new function() {
 		strokeWidth: 1,
 		strokeCap: 'butt',
 		strokeJoin: 'miter',
+		strokeScaling: true,
 		miterLimit: 10,
 		dashOffset: 0,
 		dashArray: [],
@@ -98,16 +99,18 @@ var Style = Base.extend(new function() {
 	};
 
 	var flags = {
-		strokeWidth: /*#=*/ Change.STROKE,
-		strokeCap: /*#=*/ Change.STROKE,
-		strokeJoin: /*#=*/ Change.STROKE,
-		miterLimit: /*#=*/ Change.STROKE,
-		fontFamily: /*#=*/ Change.GEOMETRY,
-		fontWeight: /*#=*/ Change.GEOMETRY,
-		fontSize: /*#=*/ Change.GEOMETRY,
-		font: /*#=*/ Change.GEOMETRY, // deprecated, links to fontFamily
-		leading: /*#=*/ Change.GEOMETRY,
-		justification: /*#=*/ Change.GEOMETRY
+		strokeWidth: /*#=*/Change.STROKE,
+		strokeCap: /*#=*/Change.STROKE,
+		strokeJoin: /*#=*/Change.STROKE,
+		// strokeScaling can change the coordinates of cached path items
+		strokeScaling: /*#=*/(Change.STROKE | Change.GEOMETRY),
+		miterLimit: /*#=*/Change.STROKE,
+		fontFamily: /*#=*/Change.GEOMETRY,
+		fontWeight: /*#=*/Change.GEOMETRY,
+		fontSize: /*#=*/Change.GEOMETRY,
+		font: /*#=*/Change.GEOMETRY, // deprecated, links to fontFamily
+		leading: /*#=*/Change.GEOMETRY,
+		justification: /*#=*/Change.GEOMETRY
 	};
 
 	// Enforce creation of beans, as bean getters have hidden parameters,
@@ -167,7 +170,7 @@ var Style = Base.extend(new function() {
 					// Notify the owner of the style change STYLE is always set,
 					// additional flags come from flags, as used for STROKE:
 					if (owner)
-						owner._changed(flag || /*#=*/ Change.STYLE);
+						owner._changed(flag || /*#=*/Change.STYLE);
 				}
 			}
 		};
@@ -369,8 +372,8 @@ var Style = Base.extend(new function() {
 	 */
 
 	/**
-	 * The shape to be used at the end of open {@link Path} items, when they
-	 * have a stroke.
+	 * The shape to be used at the beginning and end of open {@link Path} items,
+	 * when they have a stroke.
 	 *
 	 * @name Style#strokeCap
 	 * @property
@@ -402,7 +405,8 @@ var Style = Base.extend(new function() {
 	 */
 
 	/**
-	 * The shape to be used at the corners of paths when they have a stroke.
+	 * The shape to be used at the segments and corners of {@link Path} items
+	 * when they have a stroke.
 	 *
 	 * @name Style#strokeJoin
 	 * @property
@@ -428,6 +432,17 @@ var Style = Base.extend(new function() {
 	 * var path3 = path2.clone();
 	 * path3.position.x += path3.bounds.width * 1.5;
 	 * path3.strokeJoin = 'bevel';
+	 */
+
+	/**
+	 * Specifies whether the stroke is to be drawn taking the current affine
+	 * transformation into account (the default behavior), or whether it should
+	 * appear as a non-scaling stroke.
+	 *
+	 * @name Style#strokeScaling
+	 * @property
+	 * @default true
+	 * @type Boolean
 	 */
 
 	/**
