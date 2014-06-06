@@ -9,7 +9,7 @@
  *
  * All rights reserved.
  *
- * Date: Fri Jun 6 11:06:17 2014 +0300
+ * Date: Fri Jun 6 11:08:45 2014 +0300
  *
  ***
  *
@@ -2746,7 +2746,7 @@ var Item = Base.extend(Callback, {
 					this._globalMatrix = this._currentPath = undefined;
 		}
 		if (cacheParent
-				&& (flags & undefined(ChangeFlag.GEOMETRY | ChangeFlag.STROKE))) {
+				&& (flags & 40)) {
 			Item._clearBoundsCache(cacheParent);
 		}
 		if (flags & 2) {
@@ -4019,7 +4019,7 @@ var Group = Item.extend({
 
 	_changed: function _changed(flags) {
 		_changed.base.call(this, flags);
-		if (flags & undefined(ChangeFlag.CHILDREN | ChangeFlag.CLIPPING)) {
+		if (flags & 1026) {
 			this._clipItem = undefined;
 		}
 	},
@@ -4564,7 +4564,7 @@ var Raster = Item.extend({
 				image ? image.naturalWidth || image.width : 0,
 				image ? image.naturalHeight || image.height : 0);
 		this._context = null;
-		this._changed(undefined(Change.GEOMETRY | Change.PIXELS));
+		this._changed(521);
 	},
 
 	getCanvas: function() {
@@ -9962,7 +9962,7 @@ var Style = Base.extend(new function() {
 		strokeWidth: 97,
 		strokeCap: 97,
 		strokeJoin: 97,
-		strokeScaling: undefined(Change.STROKE | Change.GEOMETRY),
+		strokeScaling: 105,
 		miterLimit: 97,
 		fontFamily: 9,
 		fontWeight: 9,
