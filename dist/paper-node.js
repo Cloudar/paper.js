@@ -9,7 +9,7 @@
  *
  * All rights reserved.
  *
- * Date: Fri Jun 6 11:08:45 2014 +0300
+ * Date: Sat Jun 14 22:36:57 2014 +0300
  *
  ***
  *
@@ -4974,7 +4974,8 @@ var HTML = Item.extend({
             }
         }
         if (this._project.view) {
-            this._project.view._element.parentNode.removeChild(this.node);
+            this.node.remove();
+
             if (HTML.objects.length === 0) {
                 this._project.view.detach('zoom', HTML.updateCoords);
                 this._project.view.detach('scroll', HTML.updateCoords);

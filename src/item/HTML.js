@@ -109,7 +109,8 @@ var HTML = Item.extend(/** @lends HTML */{
             }
         }
         if (this._project.view) {
-            this._project.view._element.parentNode.removeChild(this.node);
+            this.node.remove();
+
             if (HTML.objects.length === 0) {
                 this._project.view.detach('zoom', HTML.updateCoords);
                 this._project.view.detach('scroll', HTML.updateCoords);
