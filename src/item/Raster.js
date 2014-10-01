@@ -139,6 +139,28 @@ var Raster = Item.extend(/** @lends Raster# */{
 		}
 	},
 
+    setSubDrawingRect: function(/* rect */) {
+        var rect = Rectangle.read(arguments);
+
+        if (rect.left < 0) {
+            rect.left = 0;
+        }
+
+        if (rect.top < 0) {
+            rect.top = 0;
+        }
+
+        if (rect.right > this._size.width) {
+            rect.right = this._size.width;
+        }
+
+        if (rect.bottom > this._size.height) {
+            rect.bottom = this._size.height;
+        }
+
+        this._subDrawingRect = rect;
+    },
+
 	/**
 	 * The width of the raster in pixels.
 	 *
@@ -632,7 +654,10 @@ var Raster = Item.extend(/** @lends Raster# */{
 	},
 
 	_getBounds: function(getter, matrix) {
-		var rect = new Rectangle(this._size).setCenter(0, 0);
+		var drawingSize = this._subDrawingRect ?
+                            this._subDrawingRect.size :
+                            new Size(this._size.width - 2, this._size.height - 2),
+            rect = new Rectangle(drawingSize).setCenter(0, 0);
 		return matrix ? matrix._transformBounds(rect) : rect;
 	},
 
@@ -657,8 +682,18 @@ var Raster = Item.extend(/** @lends Raster# */{
 			// Handle opacity for Rasters separately from the rest, since
 			// Rasters never draw a stroke. See Item#draw().
 			ctx.globalAlpha = this._opacity;
-			ctx.drawImage(element,
-					-this._size.width / 2, -this._size.height / 2);
+
+            if (!this._subDrawingRect) {
+                ctx.drawImage(element, -this._size.width / 2, -this._size.height / 2);
+            }
+            else {
+                ctx.drawImage(element,
+                    this._subDrawingRect.left, this._subDrawingRect.top, // The coordinate where to start clipping
+                        this._subDrawingRect.width, this._subDrawingRect.height, // The size of the clipped image
+                        -this._subDrawingRect.width / 2, -this._subDrawingRect.height / 2, // The coordinate where to place the image on the canvas
+                        this._subDrawingRect.width, this._subDrawingRect.height // The size of the image to use
+                );
+            }
 		}
 	},
 

@@ -9,7 +9,7 @@
  *
  * All rights reserved.
  *
- * Date: Sat Jun 14 22:36:57 2014 +0300
+ * Date: 2014-10-01
  *
  ***
  *
@@ -2599,6 +2599,7 @@ var Item = Base.extend(Callback, {
 	_selectChildren: false,
 	_serializeFields: {
 		name: null,
+        sceneObjectData: null,
 		applyMatrix: null,
 		matrix: new Matrix(),
 		pivot: null,
@@ -2713,10 +2714,12 @@ var Item = Base.extend(Callback, {
 		function serialize(fields) {
 			for (var key in fields) {
 				var value = that[key];
+                var compactMode = key !== 'data' && key !== 'sceneObject';
+
 				if (!Base.equals(value, key === 'leading'
 						? fields.fontSize * 1.2 : fields[key])) {
 					props[key] = Base.serialize(value, options,
-							key !== 'data', dictionary);
+							compactMode, dictionary);
 				}
 			}
 		}
@@ -2907,6 +2910,10 @@ var Item = Base.extend(Callback, {
 	setData: function(data) {
 		this._data = data;
 	},
+
+    _sceneObject: null,
+
+    _sceneObjectData: null,
 
 	getPosition: function(_dontLink) {
 		var position = this._position,
@@ -4511,6 +4518,28 @@ var Raster = Item.extend({
 		}
 	},
 
+    setSubDrawingRect: function() {
+        var rect = Rectangle.read(arguments);
+
+        if (rect.left < 0) {
+            rect.left = 0;
+        }
+
+        if (rect.top < 0) {
+            rect.top = 0;
+        }
+
+        if (rect.right > this._size.width) {
+            rect.right = this._size.width;
+        }
+
+        if (rect.bottom > this._size.height) {
+            rect.bottom = this._size.height;
+        }
+
+        this._subDrawingRect = rect;
+    },
+
 	getWidth: function() {
 		return this._size.width;
 	},
@@ -4765,7 +4794,10 @@ var Raster = Item.extend({
 	},
 
 	_getBounds: function(getter, matrix) {
-		var rect = new Rectangle(this._size).setCenter(0, 0);
+		var drawingSize = this._subDrawingRect ?
+                            this._subDrawingRect.size :
+                            new Size(this._size.width - 2, this._size.height - 2),
+            rect = new Rectangle(drawingSize).setCenter(0, 0);
 		return matrix ? matrix._transformBounds(rect) : rect;
 	},
 
@@ -4787,8 +4819,18 @@ var Raster = Item.extend({
 		var element = this.getElement();
 		if (element) {
 			ctx.globalAlpha = this._opacity;
-			ctx.drawImage(element,
-					-this._size.width / 2, -this._size.height / 2);
+
+            if (!this._subDrawingRect) {
+                ctx.drawImage(element, -this._size.width / 2, -this._size.height / 2);
+            }
+            else {
+                ctx.drawImage(element,
+                    this._subDrawingRect.left, this._subDrawingRect.top, 
+                        this._subDrawingRect.width, this._subDrawingRect.height, 
+                        -this._subDrawingRect.width / 2, -this._subDrawingRect.height / 2, 
+                        this._subDrawingRect.width, this._subDrawingRect.height 
+                );
+            }
 		}
 	},
 

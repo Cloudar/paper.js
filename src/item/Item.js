@@ -55,6 +55,7 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 	// that can be ommited.
 	_serializeFields: {
 		name: null,
+        sceneObjectData: null,
 		applyMatrix: null,
 		matrix: new Matrix(),
 		pivot: null,
@@ -205,11 +206,13 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 				var value = that[key];
 				// Style#leading is a special case, as its default value is
 				// dependent on the fontSize. Handle this here separately.
+                var compactMode = key !== 'data' && key !== 'sceneObject';
+
 				if (!Base.equals(value, key === 'leading'
 						? fields.fontSize * 1.2 : fields[key])) {
 					props[key] = Base.serialize(value, options,
 							// Do not use compact mode for data
-							key !== 'data', dictionary);
+							compactMode, dictionary);
 				}
 			}
 		}
@@ -738,6 +741,10 @@ var Item = Base.extend(Callback, /** @lends Item# */{
 	setData: function(data) {
 		this._data = data;
 	},
+
+    _sceneObject: null,
+
+    _sceneObjectData: null,
 
 	/**
 	 * {@grouptitle Position and Bounding Boxes}

@@ -25,7 +25,10 @@
 #	stripped		Preprocessed, formated but without comments
 
 # Get the date from the git log:
-DATE=$(git log -1 --pretty=format:%ad)
+
+#DATE=$(git log -1 --pretty=format:%ad)
+DATE=`date +%Y-%m-%d`
+
 # Load __options from options.js and convert it to escaped JSON, to be passed on
 # to prepro:
 OPTIONS=$(printf '%q' $(node -e "
