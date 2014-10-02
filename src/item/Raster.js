@@ -656,7 +656,7 @@ var Raster = Item.extend(/** @lends Raster# */{
 	_getBounds: function(getter, matrix) {
 		var drawingSize = this._subDrawingRect ?
                             this._subDrawingRect.size :
-                            new Size(this._size.width - 2, this._size.height - 2),
+                            this._size,
             rect = new Rectangle(drawingSize).setCenter(0, 0);
 		return matrix ? matrix._transformBounds(rect) : rect;
 	},
