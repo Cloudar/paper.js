@@ -402,8 +402,9 @@ var Tool = PaperScopeItem.extend(/** @lends Tool# */{
 			break;
 		}
 		// Prevent default if mouse event was handled.
-		if (called)
-			event.preventDefault();
+		// !!! commented out because it broke text selection functionality
+		/*if (called)
+		 event.preventDefault();*/
 		return called;
 	}
 	/**
