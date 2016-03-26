@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "canvas": "1.1.4",
-    "jsdom": "0.10.6",
+    "jsdom": "git://github.com/lehni/jsdom.git#bd86dd16666241edd5f25bc4f4e144f24da3c889",
     "request": "2.36.0"
   },
   "devDependencies": {
